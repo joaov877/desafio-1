@@ -1,0 +1,16 @@
+{
+  "name": "api-service-pattern",
+  "version": "1.0.0",
+  "description": "API Node com Service Pattern - desafio DevSecOps 1.1",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "node --watch src/index.js",
+    "build": "node -e \"require('node:fs').cpSync('src','dist',{recursive:true})\"",
+    "test": "node --test",
+    "audit": "npm audit --omit=dev"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

@@ -1,0 +1,60 @@
+name: CI - DevSecOps
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests-and-audit:
+    name: Testes e auditoria npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar dependências de forma reproduzível
+        run: npm ci
+      - name: Executar testes
+        run: npm test
+      - name: Auditar dependências
+        run: npm audit --audit-level=high
+      - name: Construir aplicação
+        run: npm run build
+
+  secrets-scan:
+    name: Buscar segredos com Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  image-scan:
+    name: Construir e analisar imagem com Trivy
+    runs-on: ubuntu-latest
+    needs: [tests-and-audit]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagem
+        run: docker build -t desafio-1-1:${{ github.sha }} .
+      - name: Analisar vulnerabilidades da imagem
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: desafio-1-1:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
